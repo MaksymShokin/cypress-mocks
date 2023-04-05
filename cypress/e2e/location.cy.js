@@ -9,14 +9,18 @@ describe('share location', () => {
           setTimeout(() => {
             cb({
               coords: {
-                longitude: 48.01,
-                latitude: 37.5
+                latitude: 37.5,
+                longitude: 48.01
               }
             });
           }, 100);
         });
+      cy.stub(window.navigator.clipboard, 'writeText')
+        .as('saveToClipboard')
+        .resolves();
     });
   });
+
   it('should fetch the user location', () => {
     cy.get('[data-cy="get-loc-btn"]').click();
     cy.get('@getUserPosition').should('have.been.called');
@@ -24,5 +28,14 @@ describe('share location', () => {
     cy.get('[data-cy="actions"]').contains('Location fetched');
   });
 
-  it('should share a location URL', () => {});
+  it('should share a location URL', () => {
+    cy.get('[data-cy="name-input"]').type('John Doe');
+    cy.get('[data-cy="get-loc-btn"]').click();
+    cy.get('[data-cy="share-loc-btn"]').click();
+    cy.get('@saveToClipboard').should('have.been.called');
+    cy.get('@saveToClipboard').should(
+      'have.been.calledWithMatch',
+      new RegExp(`${37.5}.*${48.01}.*${encodeURI('John Doe')}`)
+    );
+  });
 });
